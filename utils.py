@@ -1,7 +1,6 @@
 """Module hosting miscellaneous utility functions for my
 attempts of advent of code 2018"""
 
-
 def read_file(filename, separator=None, convert=None):
     """Parse input file, return a list of stripped lines; if separator is
        specified, break up the individual lines on the separator as well
