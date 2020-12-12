@@ -74,56 +74,47 @@ What is the total number of distinct ways you can arrange the adapters to
 connect the charging
 outlet to your device?
 """
-import math
-from itertools import permutations
+import itertools
+
+import utils
 
 
-def determine_permutation_length(source_adapters):
-    """ As we must bridge min 1 and max 3 jolts per step, we can determine
-    the minimum and the
-    maximum length of the chain of adapters required.
-    E.g. if max(adapter_joltage) = 9, the device requires an input joltage of
-    12.
-    Hence, we require at least (minimum) of 3 adapters (3, 6, 9 ) to bridge
-    the input 0 to the output of 12. When the max joltage is 8, this does not
-    change: we still need 3, so we need the ceil (max/3).
+def build_next_dict(source_adapters):
+    """Determine the list of next-elements (values) for given adapter (key)"""
+    result = {}
+    for adapter in [0, *source_adapters]:
+        next_adapters = [next_adapter for next_adapter in source_adapters
+                         if 1 <= next_adapter - adapter <= 3]
+        result[adapter] = sorted(next_adapters)
+    return result
+
+
+def build_tree(leaf_values, next_value_dict, end_value):
+    """ Given the current leaf values, determine the next possible leaf values.
+        Prune this collection and return the non-terminated leaf values and
+        the number of terminated leaf values in this iteration.
     """
-    min_adapters = math.ceil(max(source_adapters) / 3)
-    max_adapters = len(source_adapters)
-    return min_adapters, max_adapters
+    all_next_values = list(itertools.chain(*[next_value_dict[leaf] for leaf
+                                             in leaf_values]))
+    new_leaf_values = [v for v in all_next_values if v < end_value]
+    return new_leaf_values, len(all_next_values) - len(new_leaf_values)
 
 
-def validate_adapter_sequence(max_joltage, adapter_sequence):
-    # Valid sequence must end with the max_adapter and start with either 1,
-    # 2 or 3. Furthermore, all neighbouring adapters must be with 1-3 jolts.
-    return adapter_sequence[0] in (1, 2, 3) and \
-           adapter_sequence[-1] == max_joltage and \
-           all(1 <= adapter_sequence[i] - adapter_sequence[i - 1] <= 3 for i
-               in range(1, len(adapter_sequence)))
+def counts_paths(source_adapters):
+    next_values = build_next_dict(source_adapters)
+    max_value = max(source_adapters)
+    total_paths = 0
+    leaf_values = [0]
+    while len(leaf_values) > 0:
+        new_leaf_values, terminated_paths = build_tree(leaf_values,
+                                                       next_values, max_value)
+        total_paths += terminated_paths
+        leaf_values = new_leaf_values
+        print(f"Current # leaf values {len(leaf_values)}, # terminated paths"
+              f" {total_paths}")
+    return total_paths
 
 
-def count_valid_permutations(adapter_sequence, permutation_length):
-    max_adapter_joltage = max(adapter_sequence)
-    sorted_adapter_sequence = sorted(adapter_sequence)
-    permutation_generator = permutations(sorted_adapter_sequence,
-                                         permutation_length)
-    valid_permutations = 0
-    # iterate over generator for early exit if first step exceeds maximum (3)
-    for perm in permutation_generator:
-        if perm[0] > 3:
-            break
-        if validate_adapter_sequence(max_joltage=max_adapter_joltage,
-                                     adapter_sequence=perm):
-            valid_permutations += 1
-    print(f"Found {valid_permutations} of length {permutation_length}")
-    return valid_permutations
-
-
-def count_all_permutations(adapter_sequence):
-    min_perm, max_perm = determine_permutation_length(adapter_sequence)
-    perm_length = min_perm
-    total_perms = 0
-    while perm_length <= max_perm:
-        total_perms += count_valid_permutations(adapter_sequence, perm_length)
-        perm_length += 1
-    return total_perms
+if __name__ == "__main__":
+    adapters = utils.read_file("data/day10.txt", convert=int)
+    print(counts_paths(adapters))
