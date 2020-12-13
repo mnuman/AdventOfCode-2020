@@ -74,7 +74,6 @@ What is the total number of distinct ways you can arrange the adapters to
 connect the charging
 outlet to your device?
 """
-import itertools
 
 import utils
 
@@ -89,30 +88,37 @@ def build_next_dict(source_adapters):
     return result
 
 
-def build_tree(leaf_values, next_value_dict, end_value):
-    """ Given the current leaf values, determine the next possible leaf values.
-        Prune this collection and return the non-terminated leaf values and
-        the number of terminated leaf values in this iteration.
+def build_tree(leaf_values_dict, next_value_dict):
+    """ Key of the leaf_values_dictionary is the current node value,
+    the value in the dictionary is the current number of paths to this node.
     """
-    all_next_values = list(itertools.chain(*[next_value_dict[leaf] for leaf
-                                             in leaf_values]))
-    new_leaf_values = [v for v in all_next_values if v < end_value]
-    return new_leaf_values, len(all_next_values) - len(new_leaf_values)
+    new_leave_values = {}
+    for cv in leaf_values_dict.keys():
+        for nv in next_value_dict[cv]:
+            if nv in new_leave_values:
+                new_leave_values[nv] += leaf_values_dict[cv]
+            else:
+                new_leave_values[nv] = leaf_values_dict[cv]
+    return new_leave_values
 
 
 def counts_paths(source_adapters):
     next_values = build_next_dict(source_adapters)
     max_value = max(source_adapters)
-    total_paths = 0
-    leaf_values = [0]
-    while len(leaf_values) > 0:
-        new_leaf_values, terminated_paths = build_tree(leaf_values,
-                                                       next_values, max_value)
-        total_paths += terminated_paths
+    leaf_values = {0: 1}
+    i = 0
+    while not (max_value in leaf_values and len(leaf_values.keys()) == 1):
+        new_leaf_values = build_tree(leaf_values, next_values)
+        # add already finished paths to the new nodes
+        if max_value in leaf_values:
+            if max_value in new_leaf_values:
+                new_leaf_values[max_value] += leaf_values[max_value]
+            else:
+                new_leaf_values[max_value] = leaf_values[max_value]
         leaf_values = new_leaf_values
-        print(f"Current # leaf values {len(leaf_values)}, # terminated paths"
-              f" {total_paths}")
-    return total_paths
+        print(f"Current iteration {i}")
+        i += 1
+    return leaf_values[max_value]
 
 
 if __name__ == "__main__":

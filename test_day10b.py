@@ -16,12 +16,8 @@ def test_build_next_dict():
 def test_build_tree():
     # adapters = 1, 2, 3, 4, 6
     d = {0: [1, 2, 3], 1: [2, 3, 4], 2: [3, 4], 3: [4, 6], 4: [6], 6: []}
-    assert day10b.build_tree([0], d, 6) == ([1, 2, 3], 0)
-    # from 2: 3, 4
-    # from 3: 4, 6
-    # from 4: 6
-    # hence: new values = [3, 4, 4], three terminated paths
-    assert day10b.build_tree([2, 3, 4, 4], d, 6) == ([3, 4, 4], 3)
+    assert day10b.build_tree({0: 1}, d) == {1: 1, 2: 1, 3: 1}
+    assert day10b.build_tree({2: 1, 3: 1, 4: 2}, d) == {3: 1, 4: 2, 6: 3}
 
 
 def test_counts_paths():
