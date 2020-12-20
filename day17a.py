@@ -170,6 +170,8 @@ active state.
 Starting with your given initial configuration, simulate six cycles. How many
 cubes are left in the active state after the sixth cycle?
 """
+import itertools
+
 import utils
 
 ACTIVE_STATE = "#"
@@ -187,10 +189,10 @@ def read_initial_state(filename):
 
 def all_neighbours(x, y, z):
     # Generate all neighbours for the given point
+    offsets = [*itertools.product((-1, 0, 1), (-1, 0, 1), (-1, 0, 1))]
+    offsets.remove((0, 0, 0))
     return [(x + offset_x, y + offset_y, z + offset_z) for
-            offset_x, offset_y, offset_z in
-            [(x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in
-             (-1, 0, 1) if (x, y, z) != (0, 0, 0)]]
+            offset_x, offset_y, offset_z in offsets]
 
 
 def get_current_cell_state(current_state, x, y, z):
@@ -217,3 +219,31 @@ def next_cell_state(current_state, x, y, z):
            (get_current_cell_state(current_state, x, y, z) == INACTIVE_STATE and
             active_neighbours == 3) else INACTIVE_STATE
     return calculated_state
+
+
+def calculate_next_state(current_state):
+    (xmin, xmax), (ymin, ymax), (zmin, zmax) = \
+        expand_calculation_boundaries(current_state)
+    next_state = {}
+    for x in range(xmin, xmax + 1):
+        for y in range(ymin, ymax + 1):
+            for z in range(zmin, zmax + 1):
+                new_cell_state = next_cell_state(current_state, x, y, z)
+                if new_cell_state == ACTIVE_STATE:
+                    next_state[(x, y, z)] = ACTIVE_STATE
+    return next_state
+
+
+def cycle(state, num_cycles=6):
+    cycle = 1
+    current_state = state
+    while cycle <= 6:
+        new_state = calculate_next_state(current_state)
+        cycle += 1
+        current_state = new_state
+    return len(current_state)
+
+
+if __name__ == "__main__":
+    inital_state = read_initial_state("data/day17.txt")
+    print(f"Active cubes after 6 cycles: {cycle(inital_state)}")
